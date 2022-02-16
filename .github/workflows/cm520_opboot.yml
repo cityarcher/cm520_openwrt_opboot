@@ -6,7 +6,7 @@ on:
     inputs:
       ssh:
         description: 'SSH connection to Actions'
-        required: false
+        required: true
         default: 'true'
 
 env:
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -x
           rm /workdir/openwrt/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-cm520-79f.dts
-          cp /tmp/qcom-ipq4019-cm520-79f.dts target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-cm520-79f.dts
+          cp /tmp/qcom-ipq4019-cm520-79f.dts /workdir/openwrt/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-cm520-79f.dts
           cat /workdir/openwrt/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-cm520-79f.dts |grep 'bootargs-append' -A 5
           cat /workdir/openwrt/target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-cm520-79f.dts |grep 'nand@0' -A 30
       
@@ -85,8 +85,8 @@ jobs:
           
       - name: Load custom configuration
         run: |
-          [ -e files ] && mv files openwrt/files
-          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+          [ -e files ] && mv files /workdir/openwrt/files
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE /workdir/openwrt/.config
           
       - name: SSH connection to Actions
         uses: P3TERX/ssh2actions@v1.0.0
@@ -98,7 +98,7 @@ jobs:
       - name: Download package
         id: package
         run: |
-          cd openwrt
+          cd /workdir/openwrt
           make defconfig
           make download -j8
           find dl -size -1024c -exec ls -l {} \;
@@ -107,7 +107,7 @@ jobs:
       - name: Compile the firmware
         id: compile
         run: |
-          cd openwrt
+          cd /workdir/openwrt
           echo -e "$(nproc) thread compile"
           make -j$(nproc) || make -j1 || make -j1 V=s
           echo "::set-output name=status::success"
@@ -130,7 +130,7 @@ jobs:
         id: organize
         if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
         run: |
-          cd openwrt/bin/targets/*/*
+          cd /workdir/openwrt/bin/targets/*/*
           rm -rf packages
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
           echo "::set-output name=status::success"
